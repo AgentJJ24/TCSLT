@@ -27,7 +27,9 @@ extern volatile unsigned char current_pin;
 extern volatile unsigned char previous_pin;
 extern volatile unsigned char jamDetect;
 extern volatile unsigned char midbitBoundary;
-extern volatile unsigned char jamSync = 0;
+extern volatile unsigned char jamSync;
+extern volatile unsigned char current_bit;
+extern volatile unsigned char previous_bit;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ SUBROUTINES +++++++++++++++++++++++++++
@@ -187,35 +189,55 @@ void display_smpte()
 void readJam_smpte()
 {
     //IF JAMSYNC VARIABLE NOT SET, INITIATE READER:  (ELSE IF SET, LEAVE READER)
+    if (jamSync == 0)
+    {
+        //READER
+        if (jamDetect == 0) //If jamDetect variable not set
+        {
+            //Check previous pin value and current to see if changed
+            //If change found:
+                //set jamDetect variable to on
+                //Set current value to previous value
+                //Leave READER
+            //else leave READER
+        }
+        if ((jamDetect == 1) && (phaseSync == 0))  //If jamDetect is set from last mid-bit and phaseSync isn't set
+        {
+            //Check previous pin value and current value to see if changed
+            //If same as before, then we found a Zero and are in phase!
+                //set phaseSync variable
+                //set previousBit value for next bit read
+                midbitBoundary = 0; //Next read will be at bit-boundary, not mid-bit
+                //Leave READER
+            //Else if different:
+                //We are crossing over a bit boundary, or a "1" mid-bit
+                //We'll check again on the next mid-bit, until we get a Zero
+                //Set current value to previous value
+                //Leave READER
+        }
+        if (phaseSync == 1)
+        {
+            //If phaseSync is set
+                //We are on beginning of LTC bit, right after bit boundary
+                //Find Frame and Sync Generator
+                syncJam_smpte();
+        }
+    }
     
-    //READER
-    //If jamDetect variable not set
-        //Check previous pin value and current to see if changed
-        //If change found:
-            //set jamDetect variable to on
-            //Set current value to previous value
-            //Leave READER
-        //else leave READER
-    //If jamDetect is set from last mid-bit and phaseSync isn't set
-        //Check previous pin value and current value to see if changed
-        //If same as before, then we found a Zero and are in phase!
-            //set phaseSync variable
-            //Leave READER
-        //Else if different:
-            //We are crossing over a bit boundary, or a "1" mid-bit
-            //We'll check again on the next mid-bit, until we get a Zero
-            //Set current value to previous value
-            //Leave READER
-    //If phaseSync is set
-        //We are on beginning of LTC bit, right after bit boundary
-        //Find Frame and Sync Generator
-        syncJam_smpte();
+    return;
     
 }
 
 void syncJam_smpte()
 {
-    
+    if (midbitBoundary == 0) //At beginning of a bit
+    {
+        
+    }
+    if (midbitBoundary == 1) //In last half of bit
+    {
+        
+    }
     //When Completed
     jamSync = 1;
     return;
