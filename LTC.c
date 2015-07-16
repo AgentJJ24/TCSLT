@@ -21,11 +21,13 @@ extern volatile unsigned char sendsignal;
 extern volatile unsigned int debugbit;
 
 //Timecode Reader Variables
-extern volatile unsigned in frame_subcount;
-volatile unsigned int midbit_period;
-volatile unsigned int current_pin;
-volatile unsigned int previous_pin;
-volatile unsigned int jamDetect;
+extern volatile unsigned char frame_subcount;
+extern volatile unsigned char midbit_period;
+extern volatile unsigned char current_pin;
+extern volatile unsigned char previous_pin;
+extern volatile unsigned char jamDetect;
+extern volatile unsigned char midbitBoundary;
+extern volatile unsigned char jamSync = 0;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ SUBROUTINES +++++++++++++++++++++++++++
@@ -172,22 +174,52 @@ void smpte_signalGenerate() //Sends LTC out on PIN
 
 void display_smpte()
 {
-    return;
+    frame_subcount++;
+    if (frame_subcount < FRAME_MIDBITCOUNT)
+    {
+        frame_subcount = 0; //Reset Frame Subcount Counter
+        
+        //Display Code Here
+        
+    }
 }
 
 void readJam_smpte()
 {
+    //IF JAMSYNC VARIABLE NOT SET, INITIATE READER:  (ELSE IF SET, LEAVE READER)
+    
+    //READER
     //If jamDetect variable not set
         //Check previous pin value and current to see if changed
         //If change found:
             //set jamDetect variable to on
             //Set current value to previous value
+            //Leave READER
         //else leave READER
-    //IF jamDetect is set
+    //If jamDetect is set from last mid-bit and phaseSync isn't set
+        //Check previous pin value and current value to see if changed
+        //If same as before, then we found a Zero and are in phase!
+            //set phaseSync variable
+            //Leave READER
+        //Else if different:
+            //We are crossing over a bit boundary, or a "1" mid-bit
+            //We'll check again on the next mid-bit, until we get a Zero
+            //Set current value to previous value
+            //Leave READER
+    //If phaseSync is set
+        //We are on beginning of LTC bit, right after bit boundary
+        //Find Frame and Sync Generator
+        syncJam_smpte();
+    
 }
 
-
-
+void syncJam_smpte()
+{
+    
+    //When Completed
+    jamSync = 1;
+    return;
+}
 
 
 

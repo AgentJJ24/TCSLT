@@ -32,11 +32,13 @@ volatile unsigned char i = 0;
 volatile unsigned int debugbit = 0;
 
 //Timecode Reader Variables
-volatile unsigned int frame_subcount = 0;  //Counts to "FRAME_MIDBITCOUNT" to display Frame
-volatile unsigned int midbit_period = MIDBIT_CLOCKPERIOD;
-volatile unsigned int current_pin = 0;
-volatile unsigned int previous_pin = 0;
-volatile unsigned int jamDetect = 0;
+volatile unsigned char frame_subcount = 0;  //Counts to "FRAME_MIDBITCOUNT" to display Frame
+volatile unsigned char midbit_period = MIDBIT_CLOCKPERIOD;
+volatile unsigned char current_pin = 0;
+volatile unsigned char previous_pin = 0;
+volatile unsigned char jamDetect = 0;
+volatile unsigned char midbitBoundary = 0;
+volatile unsigned char jamSync = 0;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ MAIN ENTRY ++++++++++++++++++++++++++++
@@ -104,14 +106,7 @@ ISR(TIMER1_COMPA_vect)
     smpte_signalGenerate();     //Setup Next Generator Signal midbit value
 
     //DISPLAY
-    frame_subcount++;
-    if (frame_subcount < FRAME_MIDBITCOUNT)
-    {
-        frame_subcount = 0; //Reset Frame Subcount Counter
-        
-        //Display Code Here
-        display_smpte();
-    }
+    display_smpte();
     
     //READER [ON PC5]
     readJam_smpte();
