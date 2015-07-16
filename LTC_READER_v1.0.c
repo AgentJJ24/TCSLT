@@ -42,6 +42,7 @@ volatile unsigned char jamSync = 0;
 volatile unsigned char current_bit = 0;
 volatile unsigned char previous_bit = 0;
 volatile unsigned char changeDetect = 0;
+volatile unsigned char codewordFound = 0;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ MAIN ENTRY ++++++++++++++++++++++++++++

@@ -31,6 +31,7 @@ extern volatile unsigned char jamSync;
 extern volatile unsigned char current_bit;
 extern volatile unsigned char previous_bit;
 extern volatile unsigned char changeDetect;
+extern volatile unsigned char codewordFound;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ SUBROUTINES +++++++++++++++++++++++++++
@@ -194,9 +195,8 @@ void readJam_smpte()
     {
         //READER
         //Fill Reader Buffer with bits from incoming LTC until codeword found
-        if (phaseSync == 1)
+        if (phaseSync == 1)   //If phaseSync is set
         {
-            //If phaseSync is set
             //We are on beginning of LTC bit, right after bit boundary
             //Find Frame and Sync Generator
             syncJam_smpte();
@@ -208,17 +208,24 @@ void readJam_smpte()
             
             current_pin = ((0b00100000 & PINC) >> 5); //Record current pin value
             changeDetect = ( current_pin ^ previous_pin );  //Check previous pin and current: see if changed
-            //If same as before, then we found a Zero and are in phase!
-            //set phaseSync variable
-            //set previousBit value for next bit read
-            midbitBoundary = 0; //Next read will be at bit-boundary, not mid-bit
-            //Leave READER
-            //Else if different:
-            //We are crossing over a bit boundary, or a "1" mid-bit
-            //We'll check again on the next mid-bit, until we get a Zero
-            //Set current value to previous value
             
-            return;//Leave READER
+            if (changeDetect = 0) //If same as before, then we found a Zero and are in phase!
+            {
+                phaseSync = 1;  //set phaseSync variable
+                previous_bit = 0;  //set previousBit value for next bit read:  Since no change, a Zero
+                midbitBoundary = 0; //Next read will be at bit-boundary, not mid-bit
+                return; //Leave READER
+            }
+            
+            if (changeDetect == 1) //Else if different:
+            {
+                //We are crossing over a bit boundary, or a "1" mid-bit
+                //...We'll check again on the next mid-bit, until we get a Zero
+                previous_pin = current_pin; //Set previous value to current value
+                return;  //Leave READER
+            }
+            
+            return;  //Leave READER
         }
         
         //Check to see if signal on Reader Pin
@@ -246,17 +253,34 @@ void readJam_smpte()
 
 void syncJam_smpte()
 {
-    if (midbitBoundary == 0) //At beginning of a bit
+    if (codewordFound = 1)
     {
+        //If full frame not loaded in yet:
+        //Storing next frame into Generator Frame Buffer
+        //If full frame loaded:
+        //set jamSync variable
+    }
+    
+    if ((midbitBoundary == 0) && (codewordFound == 0)) //At beginning of a bit
+    {
+        //Store last LTC bit in Codeword Buffer
+        //Store current pin into previous pin variable
+        //Check if codeword has been found, if so set codewordFound variable
+        //Done here
         
     }
-    if (midbitBoundary == 1) //In last half of bit
+    
+    if ((midbitBoundary == 1) && (codewordFound == 0)) //In last half of bit
     {
-        
+        //Record current pin value
+        //Check previous pin and current: see if changed
+        //Store "1" or "0" LTC bit (depends on if a change)
+        //Store c
     }
-    //When Completed
-    jamSync = 1;
-    return;
+    
+    midbitBoundary ^= 1; //Switch for next midbit Boundary
+    
+    
 }
 
 
