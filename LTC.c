@@ -30,6 +30,7 @@ extern volatile unsigned char midbitBoundary;
 extern volatile unsigned char jamSync;
 extern volatile unsigned char current_bit;
 extern volatile unsigned char previous_bit;
+extern volatile unsigned char changeDetect;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ SUBROUTINES +++++++++++++++++++++++++++
@@ -192,36 +193,51 @@ void readJam_smpte()
     if (jamSync == 0)
     {
         //READER
-        if (jamDetect == 0) //If jamDetect variable not set
-        {
-            //Check previous pin value and current to see if changed
-            //If change found:
-                //set jamDetect variable to on
-                //Set current value to previous value
-                //Leave READER
-            //else leave READER
-        }
-        if ((jamDetect == 1) && (phaseSync == 0))  //If jamDetect is set from last mid-bit and phaseSync isn't set
-        {
-            //Check previous pin value and current value to see if changed
-            //If same as before, then we found a Zero and are in phase!
-                //set phaseSync variable
-                //set previousBit value for next bit read
-                midbitBoundary = 0; //Next read will be at bit-boundary, not mid-bit
-                //Leave READER
-            //Else if different:
-                //We are crossing over a bit boundary, or a "1" mid-bit
-                //We'll check again on the next mid-bit, until we get a Zero
-                //Set current value to previous value
-                //Leave READER
-        }
+        //Fill Reader Buffer with bits from incoming LTC until codeword found
         if (phaseSync == 1)
         {
             //If phaseSync is set
-                //We are on beginning of LTC bit, right after bit boundary
-                //Find Frame and Sync Generator
-                syncJam_smpte();
+            //We are on beginning of LTC bit, right after bit boundary
+            //Find Frame and Sync Generator
+            syncJam_smpte();
         }
+        
+        //Detect when mid-bit timer interrupt is in phase (or close enough for proper read)
+        if ((jamDetect == 1) && (phaseSync == 0))  //If jamDetect is set from last mid-bit and phaseSync isn't set
+        {
+            
+            current_pin = ((0b00100000 & PINC) >> 5); //Record current pin value
+            changeDetect = ( current_pin ^ previous_pin );  //Check previous pin and current: see if changed
+            //If same as before, then we found a Zero and are in phase!
+            //set phaseSync variable
+            //set previousBit value for next bit read
+            midbitBoundary = 0; //Next read will be at bit-boundary, not mid-bit
+            //Leave READER
+            //Else if different:
+            //We are crossing over a bit boundary, or a "1" mid-bit
+            //We'll check again on the next mid-bit, until we get a Zero
+            //Set current value to previous value
+            
+            return;//Leave READER
+        }
+        
+        //Check to see if signal on Reader Pin
+        if (jamDetect == 0) //If jamDetect variable not set
+        {
+            
+            current_pin = ((0b00100000 & PINC) >> 5); //Record current pin value
+            changeDetect = ( current_pin ^ previous_pin ); //Check previous pin and current: see if changed
+
+            if (changeDetect == 1) //If change found:
+            {
+                jamDetect = 1;  //set jamDetect variable to on
+                previous_pin = current_pin;  //Set previous value to current value
+                return;
+            }
+                
+            return; //else leave READER
+        }
+
     }
     
     return;
