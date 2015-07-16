@@ -32,23 +32,27 @@ volatile unsigned char i = 0;
 volatile unsigned int debugbit = 0;
 
 //Timecode Reader Variables
-volatile unsigned in frame_subcount = 0;  //Counts to "FRAME_MIDBITCOUNT" to display Frame
+volatile unsigned int frame_subcount = 0;  //Counts to "FRAME_MIDBITCOUNT" to display Frame
+volatile unsigned int midbit_period = MIDBIT_CLOCKPERIOD;
+volatile unsigned int current_pin = 0;
+volatile unsigned int previous_pin = 0;
+volatile unsigned int jamDetect = 0;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ MAIN ENTRY ++++++++++++++++++++++++++++
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 int main(void)
 {
-	//Sleep Mode and Power Management Setup
+	//SLEEP MODE & POWER MANAGEMENT SETUP
 	SMCR |= 0b00000001; //Enable SE(sleep enable) bit and Idle Sleep Mode
 	//PRR |=  ; //Power Reduction Register
     MCUCR |= 0b01100000; //The following two commands work to disable Brown-Out detection (BOD)
 	MCUCR ^= 0b00100000;
-	DIDR1 |= 0b00000011; //Disable Analog Comparator Pins AIN1/AIN0 Digital Input
-	DIDR0 |= 0b00000000; //Disable ADC Pins ADC0D/ADC1D/ADC2D/ADC3D/ADC4D/ADC5D Digital Input
+	DIDR1 |= 0b00000011; //Disable Analog Comparator Pins AIN1/AIN0 Digital Input [PINs will always read 0]
+	DIDR0 |= 0b00000000; //Enable ADC Pins ADC0D/ADC1D/ADC2D/ADC3D/ADC4D/ADC5D Digital Input
 	ACSR |= 0b10000000; //Disable Analog Comparator
 
-	//Timer Setup
+	//TIMER SETUP
 	GTCCR = (1 << TSM) | (1 << PSRASY) | (1 << PSRSYNC); //Reset Prescaler and halts Timer0/1/2 so they can be synced when TSM bit cleared
     //Timer1 Output Compare Match Setup
         TCCR1A = 0x00; //0b00000000;  OC1A disconnected from Timer
@@ -59,10 +63,16 @@ int main(void)
         TCNT1 = 0x0000; //Set 16-bit Counter to 0
     //Timer1 Input Capture Setup
 
-	//PIN Setup
-    //Generator Pin
+	//PIN SETUP
+    //Generator Pin: PB1
         DDRB |= (1 << DDB1); //Set PB1 Pin as output
-        PORTB = 0b00000000;	//Generates LTC
+        PORTB &= 0b11111101;	//Clear PB1 Pin to Low (Pin Generates LTC)
+    //Reader Pin: PC5
+        DDRC |= (0 << DDC5); //Set PC5 Pin as Input
+        PORTC &= 0b11011111; //Clear PC5 Pin Pullup Resistor to off
+        previous_pin = (0b00100000 & PINC); //Read initial Pin level and set as default
+        previous_pin = previous_pin >> 5; //Move PC5 spot to lsb spot to check
+        previous_pin &= 0b00000001; //AND helps ignore any other PIN values picked up
     
     //Enable Global Interrupt Flag
 	sei(); //Enable Global Interrupts
@@ -84,12 +94,12 @@ int main(void)
 //+++++++++++++++++++++++ INTERRUPTS ++++++++++++++++++++++++++++
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-//GENERATOR & DISPLAY: Mid-bit (of the 80 LTC bits) Timer Compare Interrupt
+//GENERATOR, DISPLAY & READER: Mid-bit (of the 80 LTC bits) Timer Compare Interrupt
 ISR(TIMER1_COMPA_vect)
 {
     //4 cycles from Main to Here
     
-    //GENERATOR
+    //GENERATOR [ON PB1]
     PORTB ^= sendsignal;     //XOR with sendsignal.  Will switch when one in its place in sendsignal
     smpte_signalGenerate();     //Setup Next Generator Signal midbit value
 
@@ -102,23 +112,9 @@ ISR(TIMER1_COMPA_vect)
         //Display Code Here
         display_smpte();
     }
-}
-
-//READER: Captures input and overrides current timer
-}
-
-ISR(TIMER1_CAPT_vect)
-{
-    //4 cycles from Main to Here
     
-    //Flash Red Led to signal incoming Signal
-
-    //Read Jammed Timecode and store
-    //Upon store in Timecode Sections, reset smpte_signalGenerate values to be ready to send from start
-    //...of frame
+    //READER [ON PC5]
     readJam_smpte();
-    
-    //Flash Green Led to signal Jam Sync Lock
-    
 }
+
 

@@ -22,6 +22,10 @@ extern volatile unsigned int debugbit;
 
 //Timecode Reader Variables
 extern volatile unsigned in frame_subcount;
+volatile unsigned int midbit_period;
+volatile unsigned int current_pin;
+volatile unsigned int previous_pin;
+volatile unsigned int jamDetect;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ SUBROUTINES +++++++++++++++++++++++++++
@@ -173,5 +177,17 @@ void display_smpte()
 
 void readJam_smpte()
 {
-    return;
+    //If jamDetect variable not set
+        //Check previous pin value and current to see if changed
+        //If change found:
+            //set jamDetect variable to on
+            //Set current value to previous value
+        //else leave READER
+    //IF jamDetect is set
 }
+
+
+
+
+
+
