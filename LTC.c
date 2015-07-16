@@ -28,10 +28,10 @@ extern volatile unsigned char previous_pin;
 extern volatile unsigned char jamDetect;
 extern volatile unsigned char midbitBoundary;
 extern volatile unsigned char jamSync;
-extern volatile unsigned char current_bit;
-extern volatile unsigned char previous_bit;
 extern volatile unsigned char changeDetect;
 extern volatile unsigned char codewordFound;
+extern volatile unsigned char ltcBit;
+extern volatile unsigned char ltcBitCount;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ SUBROUTINES +++++++++++++++++++++++++++
@@ -212,7 +212,6 @@ void readJam_smpte()
             if (changeDetect = 0) //If same as before, then we found a Zero and are in phase!
             {
                 phaseSync = 1;  //set phaseSync variable
-                previous_bit = 0;  //set previousBit value for next bit read:  Since no change, a Zero
                 midbitBoundary = 0; //Next read will be at bit-boundary, not mid-bit
                 return; //Leave READER
             }
@@ -229,7 +228,7 @@ void readJam_smpte()
         }
         
         //Check to see if signal on Reader Pin
-        if (jamDetect == 0) //If jamDetect variable not set
+        if ((jamDetect == 0) && (phaseSync == 0)) //If jamDetect variable not set
         {
             
             current_pin = ((0b00100000 & PINC) >> 5); //Record current pin value
@@ -239,7 +238,7 @@ void readJam_smpte()
             {
                 jamDetect = 1;  //set jamDetect variable to on
                 previous_pin = current_pin;  //Set previous value to current value
-                return;
+                return; //Leave READER
             }
                 
             return; //else leave READER
@@ -259,23 +258,22 @@ void syncJam_smpte()
         //Storing next frame into Generator Frame Buffer
         //If full frame loaded:
         //set jamSync variable
+        ltcBit++; //Increment ltcBit [0-79 for each of the 80 LTC Bits]
     }
     
     if ((midbitBoundary == 0) && (codewordFound == 0)) //At beginning of a bit
     {
-        //Store last LTC bit in Codeword Buffer
-        //Store current pin into previous pin variable
-        //Check if codeword has been found, if so set codewordFound variable
-        //Done here
-        
+        current_pin = ((0b00100000 & PINC) >> 5);  //Store current pin into previous pin variable
     }
     
     if ((midbitBoundary == 1) && (codewordFound == 0)) //In last half of bit
     {
-        //Record current pin value
-        //Check previous pin and current: see if changed
-        //Store "1" or "0" LTC bit (depends on if a change)
-        //Store c
+        current_pin = ((0b00100000 & PINC) >> 5);  //Store current pin into previous pin variable
+        changeDetect = ( current_pin ^ previous_pin ); //Check previous pin and current: see if changed
+        //Store "1" or "0" LTC bit  in Codeword Buffer
+        //Check if codeword has been found, if so set codewordFound variable
+        //...we want frame load to start at next midbit (which is beginning bit boundary)
+        //Done here
     }
     
     midbitBoundary ^= 1; //Switch for next midbit Boundary

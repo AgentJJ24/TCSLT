@@ -39,10 +39,10 @@ volatile unsigned char previous_pin = 0;
 volatile unsigned char jamDetect = 0;
 volatile unsigned char midbitBoundary = 0;
 volatile unsigned char jamSync = 0;
-volatile unsigned char current_bit = 0;
-volatile unsigned char previous_bit = 0;
 volatile unsigned char changeDetect = 0;
 volatile unsigned char codewordFound = 0;
+volatile unsigned char ltcBit = 0;
+volatile unsigned char ltcBitCount = 0;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ MAIN ENTRY ++++++++++++++++++++++++++++
