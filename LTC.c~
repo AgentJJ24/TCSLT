@@ -255,7 +255,7 @@ void readJam_smpte()
 
 void syncJam_smpte()
 {
-    if (codewordFound == 1)
+    if (codewordFound = 1)
     {
         //Strobe Green LED now to show syncing
         
