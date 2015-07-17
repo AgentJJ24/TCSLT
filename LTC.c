@@ -22,7 +22,6 @@ extern volatile unsigned int debugbit;
 
 //Timecode Reader Variables
 extern volatile unsigned char frame_subcount;
-extern volatile unsigned char midbit_period;
 extern volatile unsigned char current_pin;
 extern volatile unsigned char previous_pin;
 extern volatile unsigned char jamDetect;
@@ -35,6 +34,7 @@ extern volatile unsigned char ltcBit;
 extern volatile unsigned char ltcBitCount;
 extern volatile unsigned char syncWordBufferA;
 extern volatile unsigned char syncWordBufferB;
+extern volatile unsigned char reverseSignal;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ SUBROUTINES +++++++++++++++++++++++++++
@@ -200,6 +200,8 @@ void readJam_smpte()
         //Fill Reader Buffer with bits from incoming LTC until codeword found
         if (phaseSync == 1)   //If phaseSync is set
         {
+            //Strobe Red LED to show trying to find CodeWord
+            
             //We are on beginning of LTC bit, right after bit boundary
             //Find Frame and Sync Generator
             syncJam_smpte();
@@ -236,7 +238,7 @@ void readJam_smpte()
             
             current_pin = ((0b00100000 & PINC) >> 5); //Record current pin value
             changeDetect = ( current_pin ^ previous_pin ); //Check previous pin and current: see if changed
-
+            
             if (changeDetect == 1) //If change found:
             {
                 jamDetect = 1;  //set jamDetect variable to on
@@ -249,6 +251,11 @@ void readJam_smpte()
 
     }
     
+    if (jamSync ==1)
+    {
+        //Hold Green LED
+    }
+    
     return;
     
 }
@@ -259,44 +266,77 @@ void syncJam_smpte()
     {
         //Strobe Green LED now to show syncing
         
-        //If full frame not loaded in yet:
-        //Storing next frame into Generator Frame Buffer
-        //If full frame loaded:
-        //set jamSync variable
-        ltcBit++; //Increment ltcBit [0-79 for each of the 80 LTC Bits]
+        if ( (midbitBoundary == 0) && (reverseSignal == 0) ) //At beginning of a bit
+        {
+            current_pin = ((0b00100000 & PINC) >> 5);  //Record Current Pin Value
+            previous_pin = current_pin;  //Set previous value to current value
+        }
+        
+        if ( (midbitBoundary == 1) && (reverseSignal == 0) ) //In last half of bit
+        {
+            
+            
+            ltcBit++; //Increment ltcBit [0-79 for each of the 80 LTC Bits]
+        }
+        
+        
+        if (ltcBit == 79)  //If full frame loaded:
+        {
+            jamSync = 1; //set jamSync variable
+        }
+        
+        
     }
     
     if ((midbitBoundary == 0) && (codewordFound == 0)) //At beginning of a bit
     {
-        current_pin = ((0b00100000 & PINC) >> 5);  //Store current pin into previous pin variable
+        current_pin = ((0b00100000 & PINC) >> 5);  //Record Current Pin Value
+        previous_pin = current_pin;  //Set previous value to current value
     }
     
     if ((midbitBoundary == 1) && (codewordFound == 0)) //In last half of bit
     {
-        current_pin = ((0b00100000 & PINC) >> 5);  //Store current pin into previous pin variable
+        current_pin = ((0b00100000 & PINC) >> 5);  //Record Current Pin Value
         changeDetect = ( current_pin ^ previous_pin ); //Check previous pin and current: see if changed
         
         //Store "1" or "0" LTC bit  in Codeword Buffer
-        ltcBit = changeDetect & 0b00000001; //Make sure only LSB is active
-        syncWordBufferB = ((syncWordBufferB << 1) & 0b11111110);  //Queue B forward one bit.  Make sure LSB is zero
+        ltcBit = changeDetect & 0b00000001; //set ltcBit.  Make sure only LSB is active
+        syncWordBufferB = ((syncWordBufferB << 1) & 0b11111110);  //Queue B forward one bit.  Make sure LSB is zero for next OR
         syncWordBufferB |= ((syncWordBufferA >> 7) & 0b00000001);  //Move MSB in A -> B's LSB.
-        syncWordBufferA = ((syncWordBufferA << 1) & 0b11111110);//Queue A forward 1 bit.  Make sure LSB is zero
+        syncWordBufferA = ((syncWordBufferA << 1) & 0b11111110);//Queue A forward 1 bit.  Make sure LSB is zero for next OR
         syncWordBufferA |= ltcBit; //Store LTC bit in LSB
-        //Store ltcBit in A
         
+        //Codeword Buffer Format:
+        //  Codeword coming in forward direction: 0011 1111 1111 1101  [64 --> 79]
+        //  IF LTC in forward direction, we'll read in bit 64 first on through to 79
+        //  Direction of Buffer Queue moves A(LSB)[last bit recorded) to B(MSB):
+        //      syncWordBuffer B [0011 1111] <---- syncWordBuffer A [1111 1101]
+        //          LSB in A is first;  B follows A, starting with LSB first too
+        //          MSB in B is last bit in frame!
         
-        //Check if codeword has been found, if so set codewordFound variable
-        //Codeword 0011 1111 1111 1101 [Left to Right, Bits 64-79]
-        //SyncWord Buffer A 0b1111 1100  SYNC WORD FIRST HALF
-        //SyncWord Buffer B 0b1011 1111  SYNC WORD SECOND HALF
-        //...we want frame load to start at next midbit (which is beginning bit boundary)
-        //Done here
+        //Check if codeword has been found,
+        if ( (syncWordBufferB == 0b00111111) && (syncWordBufferA == 0b11111101) )
+        {
+            codewordFound = 1;  //set codewordFound variable
+            //...we want frame load to start at next midbit (which is beginning bit boundary)
+        }
+        else if ( (syncWordBufferB == 0b10111111) && (syncWordBufferA == 0b11111100) )
+        {
+            //incoming signal stream is in reverse
+            reverseSignal = 1;
+            codewordFound = 1;
+        }
+        
+        //Done here: go on and toggle midbitBoundary for next midbit read
     }
     
-    midbitBoundary ^= 1; //Switch for next midbit Boundary
+    midbitBoundary ^= 1; //Toggle Switch for next midbit Boundary
     
     
 }
 
 
-
+led_strobe()
+{
+    return;
+}

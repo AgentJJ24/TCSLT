@@ -22,5 +22,6 @@ void smpte_signalGenerate(void);
 void display_smpte(void);
 void readJam_smpte(void);
 void syncJam_smpte(void);
+void led_strobe(void);
 
 #endif

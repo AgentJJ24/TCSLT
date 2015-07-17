@@ -33,7 +33,6 @@ volatile unsigned int debugbit = 0;
 
 //Timecode Reader Variables
 volatile unsigned char frame_subcount = 0;  //Counts to "FRAME_MIDBITCOUNT" to display Frame
-volatile unsigned char midbit_period = MIDBIT_CLOCKPERIOD;
 volatile unsigned char current_pin = 0;
 volatile unsigned char previous_pin = 0;
 volatile unsigned char jamDetect = 0;
@@ -46,6 +45,7 @@ volatile unsigned char ltcBit = 0;
 volatile unsigned char ltcBitCount = 0;
 volatile unsigned char syncWordBufferA = 0;
 volatile unsigned char syncWordBufferB = 0;
+volatile unsigned char reverseSignal = 0;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ MAIN ENTRY ++++++++++++++++++++++++++++
@@ -82,6 +82,9 @@ int main(void)
         previous_pin = (0b00100000 & PINC); //Read initial Pin level and set as default
         previous_pin = previous_pin >> 5; //Move PC5 spot to lsb spot to check
         previous_pin &= 0b00000001; //AND helps ignore any other PIN values picked up
+    //Green LED Pin:
+    //Red LED Pin:
+    //7-Segment Display Pins:
     
     //Enable Global Interrupt Flag
 	sei(); //Enable Global Interrupts
@@ -96,6 +99,9 @@ int main(void)
 	while(1)
 	{
 		sleep_mode();	//Go into Idle Sleep Mode until Interrupt occurs
+        
+        //LED STROBING DEPENDING ON CURRENT MODE
+        led_strobe();
 	}
 }
 
