@@ -1,3 +1,6 @@
+PRG = TCSLT
+OBJ = LTC.o LTC_READER_v1.0.o
+
 TARGET_DEV = atmega328p
 COMPILER = avr-
 
@@ -11,23 +14,20 @@ STRIP =         $(COMPILER)strip
 OBJCOPY =       $(COMPILER)objcopy
 OBJDUMP =       $(COMPILER)objdump
 
-CFLAGS =        -mmcu=$(TARGET_DEV) -Wall -Os -o
+LIBS=
+CFLAGS =        -mmcu=$(TARGET_DEV) -Wall -Os
 ASFLAGS =       -mmcu=$(TARGET_DEV) -Wall -Os
 LDFLAGS =       -T main.lds
 OBJCPFLAGS = 	-j .text -j .data -O ihex
 
-all: TCSLT.hex
-	sudo avrdude -c usbasp -p m328p -U flash:w:TCSLT.hex:i
+all: $(PRG).hex $(PRG).elf
+	sudo avrdude -c usbasp -p m328p -U flash:w:$(PRG).hex:i
 
-TCSLT.hex: TCSLT.elf
+$(PRG).hex: $(PRG).elf
 	$(OBJCOPY) $(OBJCPFLAGS) $< $@
 
-TCSLT.elf: LTC.c LTC_READER_v1.0.c
-	$(CC) $(CFLAGS) $@ $<
-
-LTC_READER_v1.0.c:
-
-LTC.c:
+$(PRG).elf: $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 clean:
 	rm *.hex && rm *.elf

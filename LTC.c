@@ -212,7 +212,7 @@ void readJam_smpte()
             current_pin = ((0b00100000 & PINC) >> 5); //Record current pin value
             changeDetect = ( current_pin ^ previous_pin );  //Check previous pin and current: see if changed
             
-            if (changeDetect = 0) //If same as before, then we found a Zero and are in phase!
+            if (changeDetect == 0) //If same as before, then we found a Zero and are in phase!
             {
                 phaseSync = 1;  //set phaseSync variable
                 midbitBoundary = 0; //Next read will be at bit-boundary, not mid-bit
