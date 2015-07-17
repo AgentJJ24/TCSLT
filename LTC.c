@@ -35,6 +35,7 @@ extern volatile unsigned char ltcBitCount;
 extern volatile unsigned char syncWordBufferA;
 extern volatile unsigned char syncWordBufferB;
 extern volatile unsigned char reverseSignal;
+extern volatile unsigned char tempSections[10];
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ SUBROUTINES +++++++++++++++++++++++++++
@@ -267,7 +268,7 @@ void syncJam_smpte()
         //Strobe Green LED now to show syncing
         //Strobe Both Green & Red if syncing and a reverse signal
         
-        if ( (midbitBoundary == 0) && (reverseSignal == 0) ) //At beginning of a bit
+        if ((midbitBoundary == 0)) //At beginning of a bit
         {
             current_pin = ((0b00100000 & PINC) >> 5);  //Record Current Pin Value
             previous_pin = current_pin;  //Set previous value to current value
@@ -278,15 +279,49 @@ void syncJam_smpte()
             current_pin = ((0b00100000 & PINC) >> 5);  //Record Current Pin Value
             changeDetect = ( current_pin ^ previous_pin ); //Check previous pin and current: see if changed
             
+            //Read bit into tempSections Buffer
+            //Sections Structure:
+            //  Read out from LSB(bit0)-->MSB(bit7), from section 0 --> 9
             //Store "1" or "0" LTC bit  in Codeword Buffer
             ltcBit = changeDetect & 0b00000001; //set ltcBit.  Make sure only LSB is active
+            //Queue Machine!  In 80-bits worth of time, we'll have our first frame bit in tempSection[0] bit0
+            tempSections[0] = ( ((tempSections[0] >> 1) & 0b01111111) | ((tempSections[1] << 7) & 0b10000000) );  //FRAME UNITS & BINARY GROUP 1
+            tempSections[1] = ( ((tempSections[1] >> 1) & 0b01111111) | ((tempSections[2] << 7) & 0b10000000) );  //FRAME TENS, CF/DF FLAGS, & BINARY GROUP 2
+            tempSections[2] = ( ((tempSections[2] >> 1) & 0b01111111) | ((tempSections[3] << 7) & 0b10000000) );  //SECONDS UNITS & BINARY GROUP 3
+            tempSections[3] = ( ((tempSections[3] >> 1) & 0b01111111) | ((tempSections[4] << 7) & 0b10000000) );  //SECONDS TENS, BPC & BINARY GROUP 4
+            tempSections[4] = ( ((tempSections[4] >> 1) & 0b01111111) | ((tempSections[5] << 7) & 0b10000000) );  //MINUTES UNITS & BINARY GROUP 5
+            tempSections[5] = ( ((tempSections[5] >> 1) & 0b01111111) | ((tempSections[6] << 7) & 0b10000000) );  //MINUTES TENS, BGF0, & BINARY GROUP 6
+            tempSections[6] = ( ((tempSections[6] >> 1) & 0b01111111) | ((tempSections[7] << 7) & 0b10000000) );  //HOURS UNITS & BINARY GROUP 7
+            tempSections[7] = ( ((tempSections[7] >> 1) & 0b01111111) | ((tempSections[8] << 7) & 0b10000000) );  //HOURS TENS, BGF1, BGF2 & BINARY GROUP 8
+            tempSections[8] = ( ((tempSections[8] >> 1) & 0b01111111) | ((tempSections[9] << 7) & 0b10000000) );  //SYNC WORD FIRST HALF
+            tempSections[9] = ( ((tempSections[9] >> 1) & 0b01111111) | ((ltcBit << 7) & 0b10000000) );  //SYNC WORD SECOND HALF
             
             ltcBitCount++; //Increment ltcBit [0-79 for each of the 80 LTC Bits]
+        }
+        
+        if ( (midbitBoundary == 1) && (reverseSignal == 1) ) //In last half of bit
+        {
+            current_pin = ((0b00100000 & PINC) >> 5);  //Record Current Pin Value
+            changeDetect = ( current_pin ^ previous_pin ); //Check previous pin and current: see if changed
+            
+
         }
         
         
         if (ltcBitCount == 80)  //If full frame loaded:
         {
+            //LOAD FULL FRAME INTO GENERATOR FRAME BUFFER
+            sections[0] = tempSections[0];      //FRAME UNITS & BINARY GROUP 1
+            sections[1] = tempSections[1];      //FRAME TENS, CF/DF FLAGS, & BINARY GROUP 2
+            sections[2] = tempSections[2];      //SECONDS UNITS & BINARY GROUP 3
+            sections[3] = tempSections[3];      //SECONDS TENS, BMC POLARITY CORRECTION & BINARY GROUP 4
+            sections[4] = tempSections[4];      //MINUTES UNITS & BINARY GROUP 5
+            sections[5] = tempSections[5];      //MINUTES TENS, BGF0, & BINARY GROUP 6
+            sections[6] = tempSections[6];      //HOURS UNITS & BINARY GROUP 7
+            sections[7] = tempSections[7];      //HOURS TENS, BGF1, BGF2 & BINARY GROUP 8
+            sections[8] = tempSections[8];     //0b1111 1100  SYNC WORD FIRST HALF
+            sections[9] = tempSections[7];     //0b1011 1111  SYNC WORD SECOND HALF
+            
             jamSync = 1; //set jamSync variable
         }
         

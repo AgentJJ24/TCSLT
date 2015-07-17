@@ -46,6 +46,7 @@ volatile unsigned char ltcBitCount = 0;
 volatile unsigned char syncWordBufferA = 0;
 volatile unsigned char syncWordBufferB = 0;
 volatile unsigned char reverseSignal = 0;
+volatile unsigned char tempSections[10];
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ MAIN ENTRY ++++++++++++++++++++++++++++
