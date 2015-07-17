@@ -265,6 +265,7 @@ void syncJam_smpte()
     if (codewordFound == 1)
     {
         //Strobe Green LED now to show syncing
+        //Strobe Both Green & Red if syncing and a reverse signal
         
         if ( (midbitBoundary == 0) && (reverseSignal == 0) ) //At beginning of a bit
         {
@@ -274,13 +275,17 @@ void syncJam_smpte()
         
         if ( (midbitBoundary == 1) && (reverseSignal == 0) ) //In last half of bit
         {
+            current_pin = ((0b00100000 & PINC) >> 5);  //Record Current Pin Value
+            changeDetect = ( current_pin ^ previous_pin ); //Check previous pin and current: see if changed
             
+            //Store "1" or "0" LTC bit  in Codeword Buffer
+            ltcBit = changeDetect & 0b00000001; //set ltcBit.  Make sure only LSB is active
             
-            ltcBit++; //Increment ltcBit [0-79 for each of the 80 LTC Bits]
+            ltcBitCount++; //Increment ltcBit [0-79 for each of the 80 LTC Bits]
         }
         
         
-        if (ltcBit == 79)  //If full frame loaded:
+        if (ltcBitCount == 80)  //If full frame loaded:
         {
             jamSync = 1; //set jamSync variable
         }
