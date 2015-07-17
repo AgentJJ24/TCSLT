@@ -43,6 +43,8 @@ volatile unsigned char changeDetect = 0;
 volatile unsigned char codewordFound = 0;
 volatile unsigned char ltcBit = 0;
 volatile unsigned char ltcBitCount = 0;
+volatile unsigned char syncWordBufferA = 0;
+volatile unsigned char syncWordBufferB = 0;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ MAIN ENTRY ++++++++++++++++++++++++++++

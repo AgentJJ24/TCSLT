@@ -32,6 +32,8 @@ extern volatile unsigned char changeDetect;
 extern volatile unsigned char codewordFound;
 extern volatile unsigned char ltcBit;
 extern volatile unsigned char ltcBitCount;
+extern volatile unsigned char syncWordBufferA;
+extern volatile unsigned char syncWordBufferA;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ SUBROUTINES +++++++++++++++++++++++++++
@@ -254,6 +256,8 @@ void syncJam_smpte()
 {
     if (codewordFound = 1)
     {
+        //Strobe Green LED now to show syncing
+        
         //If full frame not loaded in yet:
         //Storing next frame into Generator Frame Buffer
         //If full frame loaded:
@@ -270,8 +274,20 @@ void syncJam_smpte()
     {
         current_pin = ((0b00100000 & PINC) >> 5);  //Store current pin into previous pin variable
         changeDetect = ( current_pin ^ previous_pin ); //Check previous pin and current: see if changed
+        
         //Store "1" or "0" LTC bit  in Codeword Buffer
+        ltcBit = changeDetect & 0b00000001; //Make sure only LSB is active
+        syncWordBufferB = ((syncWordBufferB << 1) & 0b11111110);  //Queue B forward one bit.  Make sure LSB is zero
+        syncWordBufferB |= ((syncWordBufferA >> 7) & 0b00000001);  //Move MSB in A -> B's LSB.
+        syncWordBufferA = ((syncWordBufferA << 1) & 0b11111110);//Queue A forward 1 bit.  Make sure LSB is zero
+        syncWordBufferA |= ltcBit; //Store LTC bit in LSB
+        //Store ltcBit in A
+        
+        
         //Check if codeword has been found, if so set codewordFound variable
+        //Codeword 0011 1111 1111 1101 [Left to Right, Bits 64-79]
+        //SyncWord Buffer A 0b1111 1100  SYNC WORD FIRST HALF
+        //SyncWord Buffer B 0b1011 1111  SYNC WORD SECOND HALF
         //...we want frame load to start at next midbit (which is beginning bit boundary)
         //Done here
     }
