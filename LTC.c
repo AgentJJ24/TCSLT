@@ -328,7 +328,7 @@ void syncJam_smpte()
         
         if (ltcBitCount == 80)  //If full frame loaded:
         {
-            //LOAD FULL FRAME INTO GENERATOR FRAME BUFFER
+            //LOAD FULL FRAME INTO FRAME BUFFER
             sections[0] = tempSections[0];      //FRAME UNITS & BINARY GROUP 1
             sections[1] = tempSections[1];      //FRAME TENS, CF/DF FLAGS, & BINARY GROUP 2
             sections[2] = tempSections[2];      //SECONDS UNITS & BINARY GROUP 3
@@ -339,6 +339,31 @@ void syncJam_smpte()
             sections[7] = tempSections[7];      //HOURS TENS, BGF1, BGF2 & BINARY GROUP 8
             sections[8] = tempSections[8];     //0b1111 1100  SYNC WORD FIRST HALF
             sections[9] = tempSections[7];     //0b1011 1111  SYNC WORD SECOND HALF
+            
+            //LOAD FULL FRAME INTO SIGNAL GENERATOR
+                //Sections[0] is first four bits userbits[0] and last four bits frames units
+                //Sections[1] is first four bits userbits[1], two bits CF/DF, and two last bits frames tens
+                //Sections[2] is first four bits userbits[2], last four bits seconds units
+                //Sections[3] is first four bits userbits[3], one bit BMC, and last three bits seconds tens
+                //Sections[4] is first four bits userbits[4], last four bits minutes units
+                //Sections[5] is first four bits userbits[5], one bit BGF0, and last three bits minutes tens
+                //Sections[6] is first four bits userbits[6], last four bits hours units
+                //Sections[7] is first four bits userbits[7], one bit BGF2, one bit BGF1, and two bits hours tens
+                //Sections[8] & [9] are codeword
+            frames = (sections[0] & 0x0F) | (sections[1] <<4);
+            seconds = (sections[2] & 0x0F) | ; //Sections
+            minutes =;
+            hours =;
+            userbits[0] =;
+            userbits[1] =;
+            userbits[2] =;
+            userbits[3] =;
+            userbits[4] =;
+            userbits[5] =;
+            userbits[6] =;
+            userbits[7] =;
+            userbits[8] =;
+
             
             jamSync = 1; //set jamSync variable
         }
