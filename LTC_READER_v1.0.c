@@ -29,6 +29,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <util/delay>
 #include <string.h>
 #include "LTC.h"
 
@@ -117,6 +118,9 @@ int main(void)
         PORTB |= 0b00000100; //Set default SS Output to High
         SPCR |= (1 << SPE) | (1 << MSTR); // ENABLE SPI, Master
         SPSR |= (1 << SPI2X); // Set clock to 10MHZ (fck/2)
+    
+    //Program the MAX7219
+        initializeMAX();
 
     
     //Enable Global Interrupt Flag

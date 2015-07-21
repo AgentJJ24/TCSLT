@@ -22,6 +22,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <util/delay.h>
 #include <string.h>
 
 //MACROS
@@ -41,5 +42,6 @@ void display_smpte(void);
 void readJam_smpte(void);
 void syncJam_smpte(void);
 void led_strobe(void);
+void initializeMAX(void);
 
 #endif
