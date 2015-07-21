@@ -53,6 +53,7 @@ volatile unsigned int debugbit = 0;
 volatile unsigned char frame_subcount = 0;  //Counts to "FRAME_MIDBITCOUNT" to display Frame
 volatile unsigned char current_pin = 0;
 volatile unsigned char previous_pin = 0;
+volatile unsigned char default_pin = 0;
 volatile unsigned char jamDetect = 0;
 volatile unsigned char midbitBoundary = 0;
 volatile unsigned char jamSync = 0;
@@ -65,6 +66,8 @@ volatile unsigned char syncWordBufferA = 0;
 volatile unsigned char syncWordBufferB = 0;
 volatile unsigned char reverseSignal = 0;
 volatile unsigned char tempSections[10];
+volatile unsigned int jamSyncHold = 1250100; //For waiting roughly 10 seconds @ 30FPS before jamming again
+volatile unsigned int jamWait = 0; //to compare against jamSyncHold
 
 //Timecode Display Variables
 volatile unsigned char MAX_address = 0;
@@ -105,6 +108,7 @@ int main(void)
         previous_pin = (0b00100000 & PINC); //Read initial Pin level and set as default
         previous_pin = previous_pin >> 5; //Move PC5 spot to lsb spot to check
         previous_pin &= 0b00000001; //AND helps ignore any other PIN values picked up
+        default_pin = previous_pin; //For coming out of a jamsync
     //Green LED Pin:
     //Red LED Pin:
     //SPI to MAX7219 Pins:

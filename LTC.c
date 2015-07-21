@@ -42,6 +42,7 @@ extern volatile unsigned int debugbit;
 extern volatile unsigned char frame_subcount;
 extern volatile unsigned char current_pin;
 extern volatile unsigned char previous_pin;
+extern volatile unsigned char default_pin;
 extern volatile unsigned char jamDetect;
 extern volatile unsigned char midbitBoundary;
 extern volatile unsigned char jamSync;
@@ -54,6 +55,8 @@ extern volatile unsigned char syncWordBufferA;
 extern volatile unsigned char syncWordBufferB;
 extern volatile unsigned char reverseSignal;
 extern volatile unsigned char tempSections[10];
+extern volatile unsigned int jamSyncHold;
+extern volatile unsigned int jamWait;
 
 //Timecode Display Variables
 extern volatile unsigned char MAX_address;
@@ -277,6 +280,23 @@ void readJam_smpte()
     if (jamSync ==1)
     {
         //Hold Green LED
+        if (jamWait < jamSyncHold)
+        {
+            jamWait++;
+        }
+        else
+        {
+            //RESET ALL
+            jamSync = 0;
+            jamWait = 0;
+            jamDetect = 0;
+            phaseSync = 0;
+            codewordFound = 0;
+            ltcBitCount = 0;
+            previous_pin = default_pin;
+        }
+        
+        
     }
     
     return;
@@ -307,6 +327,7 @@ void syncJam_smpte()
             //Store "1" or "0" LTC bit  in Codeword Buffer
             ltcBit = changeDetect & 0b00000001; //set ltcBit.  Make sure only LSB is active
             //Queue Machine!  In 80-bits worth of time, we'll have our first frame bit in tempSection[0] bit0
+            //For ease: Read in is left to right, bottom to top
             tempSections[0] = ( ((tempSections[0] >> 1) & 0b01111111) | ((tempSections[1] << 7) & 0b10000000) );  //FRAME UNITS & BINARY GROUP 1
             tempSections[1] = ( ((tempSections[1] >> 1) & 0b01111111) | ((tempSections[2] << 7) & 0b10000000) );  //FRAME TENS, CF/DF FLAGS, & BINARY GROUP 2
             tempSections[2] = ( ((tempSections[2] >> 1) & 0b01111111) | ((tempSections[3] << 7) & 0b10000000) );  //SECONDS UNITS & BINARY GROUP 3
@@ -323,9 +344,28 @@ void syncJam_smpte()
         
         if ( (midbitBoundary == 1) && (reverseSignal == 1) ) //In last half of bit
         {
+            //FOR REVERSE INCOMING SIGNAL 79 ---> 0
             current_pin = ((0b00100000 & PINC) >> 5);  //Record Current Pin Value
             changeDetect = ( current_pin ^ previous_pin ); //Check previous pin and current: see if changed
             
+            //Read bit into tempSections Buffer
+            //Sections Structure:
+            //  Read out from LSB(bit0)-->MSB(bit7), from section 0 --> 9
+            //Store "1" or "0" LTC bit  in Codeword Buffer
+            ltcBit = changeDetect & 0b00000001; //set ltcBit.  Make sure only LSB is active
+            //Queue Machine!  In 80-bits worth of time, we'll have our first frame bit in tempSection[0] bit0
+            //For ease: Read in is right to left, bottom to top
+            tempSections[7] = ( ((tempSections[7] << 1) & 0b11111110) | ((tempSections[6] >> 7) & 0b00000001) );
+            tempSections[6] = ( ((tempSections[6] << 1) & 0b11111110) | ((tempSections[5] >> 7) & 0b00000001) );
+            tempSections[5] = ( ((tempSections[5] << 1) & 0b11111110) | ((tempSections[4] >> 7) & 0b00000001) );
+            tempSections[4] = ( ((tempSections[4] << 1) & 0b11111110) | ((tempSections[3] >> 7) & 0b00000001) );
+            tempSections[3] = ( ((tempSections[3] << 1) & 0b11111110) | ((tempSections[2] >> 7) & 0b00000001) );
+            tempSections[2] = ( ((tempSections[2] << 1) & 0b11111110) | ((tempSections[1] >> 7) & 0b00000001) );
+            tempSections[1] = ( ((tempSections[1] << 1) & 0b11111110) | ((tempSections[0] >> 7) & 0b00000001) );
+            tempSections[0] = ( ((tempSections[0] << 1) & 0b11111110) | ((ltcBit & 0b00000001)) );
+            
+            //Initially has first 16 bits already counted since codeword found and in reverse!
+            ltcBitCount++; //Increment ltcBit [0-79 for each of the 80 LTC Bits]
 
         }
         
@@ -354,22 +394,25 @@ void syncJam_smpte()
                 //Sections[6] is first four bits userbits[6], last four bits hours units
                 //Sections[7] is first four bits userbits[7], one bit BGF2, one bit BGF1, and two bits hours tens
                 //Sections[8] & [9] are codeword
-            frames = (sections[0] & 0b00001111) | (sections[1] & 0b00000011 << 4);
-            seconds = (sections[2] & 0x0F) | ; //Sections
-            minutes =;
-            hours =;
-            userbits[0] =;
-            userbits[1] =;
-            userbits[2] =;
-            userbits[3] =;
-            userbits[4] =;
-            userbits[5] =;
-            userbits[6] =;
-            userbits[7] =;
-            userbits[8] =;
-
+                //frames (T:tens, U:Units):  (0b00TT UUUU)
+                //seconds: (0b0TTT UUUU)
+                //minutes: (0b0TTT UUUU)
+                //hours: (0b00TT UUUU
+            frames =    (sections[0] & 0b00001111) | ( (sections[1] & 0b00000011) << 4 );
+            seconds =   (sections[2] & 0b00001111) | ( (sections[3] & 0b00000111) << 4 );
+            minutes =   (sections[4] & 0b00001111) | ( (sections[5] & 0b00000111) << 4 );
+            hours =     (sections[6] & 0b00001111) | ( (sections[7] & 0b00000011) << 4 );
+            userbits[0] =   (sections[0] & 0b11110000) >> 4;
+            userbits[1] =   (sections[1] & 0b11110000) >> 4;
+            userbits[2] =   (sections[2] & 0b11110000) >> 4;
+            userbits[3] =   (sections[3] & 0b11110000) >> 4;
+            userbits[4] =   (sections[4] & 0b11110000) >> 4;
+            userbits[5] =   (sections[5] & 0b11110000) >> 4;
+            userbits[6] =   (sections[6] & 0b11110000) >> 4;
+            userbits[7] =   (sections[7] & 0b11110000) >> 4;
             
             jamSync = 1; //set jamSync variable
+            previous_pin = default_pin; //For when we come back from JamSync
         }
         
         
@@ -404,6 +447,7 @@ void syncJam_smpte()
         //Check if codeword has been found,
         if ( (syncWordBufferB == 0b00111111) && (syncWordBufferA == 0b11111101) )
         {
+            reverseSignal = 0; //In forward direction
             codewordFound = 1;  //set codewordFound variable
             //...we want frame load to start at next midbit (which is beginning bit boundary)
         }
@@ -412,6 +456,11 @@ void syncJam_smpte()
             //incoming signal stream is in reverse
             reverseSignal = 1;
             codewordFound = 1;
+          
+            //Codeword already Found for this frame if in reverse!
+            ltcBitCount = 16;
+            tempSections[9] = 0xBF;
+            tempSections[8] = 0xFC;
         }
         
         //Done here: go on and toggle midbitBoundary for next midbit read
