@@ -276,7 +276,7 @@ void initializeMAX()  //Programs MAX7219
 void display_smpte()
 {
     frame_subcount++;
-    if (frame_subcount < FRAME_MIDBITCOUNT)
+    if (frame_subcount == FRAME_MIDBITCOUNT)
     {
         frame_subcount = 0; //Reset Frame Subcount Counter
         

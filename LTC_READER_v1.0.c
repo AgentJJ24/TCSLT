@@ -124,14 +124,14 @@ int main(void)
 
     
     //Enable Global Interrupt Flag
-	sei(); //Enable Global Interrupts
+        sei(); //Enable Global Interrupts
     
     //Start all Timers
-    GTCCR = (0 << TSM); //Start Timers
+        GTCCR = (0 << TSM); //Start Timers
     
     //Generator Preset (starting at zero time [HIGH], so that next period is the mid-bit)
-    PORTB ^= sendsignal; //Start Generator LTC High at top of signal
-    smpte_signalGenerate(); //Presets for first mid-bit value
+        PORTB ^= sendsignal; //Start Generator LTC High at top of signal
+        smpte_signalGenerate(); //Presets for first mid-bit value
     
 	while(1)
 	{
