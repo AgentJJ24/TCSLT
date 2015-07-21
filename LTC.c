@@ -55,6 +55,10 @@ extern volatile unsigned char syncWordBufferB;
 extern volatile unsigned char reverseSignal;
 extern volatile unsigned char tempSections[10];
 
+//Timecode Display Variables
+extern volatile unsigned char MAX_address;
+extern volatile unsigned char MAX_data;
+
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ SUBROUTINES +++++++++++++++++++++++++++
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -350,7 +354,7 @@ void syncJam_smpte()
                 //Sections[6] is first four bits userbits[6], last four bits hours units
                 //Sections[7] is first four bits userbits[7], one bit BGF2, one bit BGF1, and two bits hours tens
                 //Sections[8] & [9] are codeword
-            frames = (sections[0] & 0x0F) | (sections[1] <<4);
+            frames = (sections[0] & 0b00001111) | (sections[1] & 0b00000011 << 4);
             seconds = (sections[2] & 0x0F) | ; //Sections
             minutes =;
             hours =;

@@ -66,6 +66,10 @@ volatile unsigned char syncWordBufferB = 0;
 volatile unsigned char reverseSignal = 0;
 volatile unsigned char tempSections[10];
 
+//Timecode Display Variables
+volatile unsigned char MAX_address = 0;
+volatile unsigned char MAX_data = 0;
+
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ MAIN ENTRY ++++++++++++++++++++++++++++
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -103,7 +107,13 @@ int main(void)
         previous_pin &= 0b00000001; //AND helps ignore any other PIN values picked up
     //Green LED Pin:
     //Red LED Pin:
-    //7-Segment Display Pins:
+    //SPI to MAX7219 Pins:
+        //SCK: PB5, MISO: PB4, MOSI: PB3, SS: PB2
+        DDRB |= (1 << DDB3) | (1 << DDB5) | (1 << DDB2);  //Set MOSI & SCK Output; Also SS as output
+        PORTB |= 0b00000100; //Set default SS Output to High
+        SPCR |= (1 << SPE) | (1 << MSTR); // ENABLE SPI, Master
+        SPSR |= (1 << SPI2X); // Set clock to 10MHZ (fck/2)
+
     
     //Enable Global Interrupt Flag
 	sei(); //Enable Global Interrupts
