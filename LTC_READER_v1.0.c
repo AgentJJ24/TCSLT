@@ -50,7 +50,6 @@ volatile unsigned char i = 0;
 volatile unsigned int debugbit = 0;
 
 //Timecode Reader Variables
-volatile unsigned char frame_subcount = 0;  //Counts to "FRAME_MIDBITCOUNT" to display Frame
 volatile unsigned char current_pin = 0;
 volatile unsigned char previous_pin = 0;
 volatile unsigned char default_pin = 0;
@@ -72,6 +71,7 @@ volatile unsigned int jamWait = 0; //to compare against jamSyncHold
 //Timecode Display Variables
 volatile unsigned char MAX_address = 0;
 volatile unsigned char MAX_data = 0;
+volatile unsigned char frame_subcount = 0;  //Counts to "FRAME_MIDBITCOUNT" to display Frame
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ MAIN ENTRY ++++++++++++++++++++++++++++

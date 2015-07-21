@@ -39,7 +39,6 @@ extern volatile unsigned char sendsignal;
 extern volatile unsigned int debugbit;
 
 //Timecode Reader Variables
-extern volatile unsigned char frame_subcount;
 extern volatile unsigned char current_pin;
 extern volatile unsigned char previous_pin;
 extern volatile unsigned char default_pin;
@@ -61,6 +60,7 @@ extern volatile unsigned int jamWait;
 //Timecode Display Variables
 extern volatile unsigned char MAX_address;
 extern volatile unsigned char MAX_data;
+extern volatile unsigned char frame_subcount;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++ SUBROUTINES +++++++++++++++++++++++++++
@@ -214,6 +214,7 @@ void display_smpte()
         
         //Display Code Here
         
+        
     }
 }
 
@@ -291,9 +292,14 @@ void readJam_smpte()
             jamWait = 0;
             jamDetect = 0;
             phaseSync = 0;
+            changeDetect = 0;
             codewordFound = 0;
             ltcBitCount = 0;
+            ltcBit = 0;
+            reverseSignal = 0;
             previous_pin = default_pin;
+            syncWordBufferA = 0;
+            syncWordBufferB = 0;
         }
         
         
@@ -412,6 +418,7 @@ void syncJam_smpte()
             userbits[7] =   (sections[7] & 0b11110000) >> 4;
             
             jamSync = 1; //set jamSync variable
+            smpte_increment(); //Since this frame has passed we need to be ready for next frame!
             previous_pin = default_pin; //For when we come back from JamSync
         }
         
