@@ -207,7 +207,7 @@ void smpte_signalGenerate() //Sends LTC out on PIN
 
 void initializeMAX()  //Programs MAX7219
 {
-    //Programs our MAX7219 and flashes a TEST for 3 seconds
+    //Programs our MAX7219 and flashes a TEST for 1 seconds
     
     //Set up Decode Mode (BCD Code B)
     MAX_address = 0b00001001; //Decode Mode Address
@@ -259,7 +259,7 @@ void initializeMAX()  //Programs MAX7219
     while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
     PORTB |= 0b00000100; //Disable Chip Select/Slave Select (by pulling high)
     
-    _delay_ms(3000); //Delay 3 seconds to see test
+    _delay_ms(1000); //Delay 1 seconds to see test
     
     //TEST Mode (Turn off)
     MAX_address = 0b00001111; //TEST Address
@@ -271,10 +271,98 @@ void initializeMAX()  //Programs MAX7219
     while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
     PORTB |= 0b00000100; //Disable Chip Select/Slave Select (by pulling high)
     
+    clear_MAX7219();
+    
+}
+
+void clear_MAX7219()
+{
+    //Frame Units
+    MAX_address = 0b00000001; //Address
+    MAX_data = MAX_CLEAR; //Data
+    PORTB &= ~(0b00000100); //Enable Chip Select/Slave Select (by pulling low)
+    SPDR = MAX_address; //Send Address Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    SPDR = MAX_data; //Send Data Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    PORTB |= 0b00000100; //Disable Chip Select/Slave Select (by pulling high)
+    
+    //Frame Tens
+    MAX_address = 0b00000010; //Address
+    MAX_data = MAX_CLEAR; //Data
+    PORTB &= ~(0b00000100); //Enable Chip Select/Slave Select (by pulling low)
+    SPDR = MAX_address; //Send Address Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    SPDR = MAX_data; //Send Data Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    PORTB |= 0b00000100; //Disable Chip Select/Slave Select (by pulling high)
+    
+    //Seconds Units
+    MAX_address = 0b00000011; //Address
+    MAX_data = MAX_CLEAR; //Data (include Dot Point)
+    PORTB &= ~(0b00000100); //Enable Chip Select/Slave Select (by pulling low)
+    SPDR = MAX_address; //Send Address Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    SPDR = MAX_data; //Send Data Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    PORTB |= 0b00000100; //Disable Chip Select/Slave Select (by pulling high)
+    
+    //Seconds Tens
+    MAX_address = 0b00000100; //Address
+    MAX_data = MAX_CLEAR; //Data
+    PORTB &= ~(0b00000100); //Enable Chip Select/Slave Select (by pulling low)
+    SPDR = MAX_address; //Send Address Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    SPDR = MAX_data; //Send Data Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    PORTB |= 0b00000100; //Disable Chip Select/Slave Select (by pulling high)
+    
+    //Minutes Units
+    MAX_address = 0b00000101; //Address
+    MAX_data = MAX_CLEAR; //Data (include Dot Point)
+    PORTB &= ~(0b00000100); //Enable Chip Select/Slave Select (by pulling low)
+    SPDR = MAX_address; //Send Address Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    SPDR = MAX_data; //Send Data Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    PORTB |= 0b00000100; //Disable Chip Select/Slave Select (by pulling high)
+    
+    //Minutes Tens
+    MAX_address = 0b00000110; //Address
+    MAX_data = MAX_CLEAR; //Data
+    PORTB &= ~(0b00000100); //Enable Chip Select/Slave Select (by pulling low)
+    SPDR = MAX_address; //Send Address Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    SPDR = MAX_data; //Send Data Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    PORTB |= 0b00000100; //Disable Chip Select/Slave Select (by pulling high)
+    
+    //Hours Units
+    MAX_address = 0b00000111; //Address
+    MAX_data = MAX_CLEAR; //Data (include Dot Point)
+    PORTB &= ~(0b00000100); //Enable Chip Select/Slave Select (by pulling low)
+    SPDR = MAX_address; //Send Address Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    SPDR = MAX_data; //Send Data Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    PORTB |= 0b00000100; //Disable Chip Select/Slave Select (by pulling high)
+    
+    //Hours Tens
+    MAX_address = 0b00001000; //Address
+    MAX_data = MAX_CLEAR; //Data
+    PORTB &= ~(0b00000100); //Enable Chip Select/Slave Select (by pulling low)
+    SPDR = MAX_address; //Send Address Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    SPDR = MAX_data; //Send Data Transmission to MAX7219
+    while(!(SPSR & (1 << SPIF))); //Wait for Transmission to complete
+    PORTB |= 0b00000100; //Disable Chip Select/Slave Select (by pulling high)
+    
 }
 
 void display_smpte()
 {
+    clear_MAX7219();
+
     frame_subcount++;
     if (frame_subcount == FRAME_MIDBITCOUNT)
     {

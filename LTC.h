@@ -33,6 +33,7 @@
 //Perhaps we can use an 8-bit timer counter (set to 97) that increments an integer (up to 43).  97 cycles incremented 43 times gives us 4171 total cycles!  Note that we need the ISR that uses this counter to be under 97 cycles worth of instructions!
 #define TC_FR 0x30 // 30 FRAMES TC
 #define FRAME_MIDBITCOUNT 160  //Each frame @ 29.97 is 33.3667ms.  That's 667,334.0007 cycles. or 160 midbits (rounded up)
+#define MAX_CLEAR 0x0F
 
 //Function Prototypes
 void smpte_increment(void);
@@ -43,5 +44,6 @@ void readJam_smpte(void);
 void syncJam_smpte(void);
 void led_strobe(void);
 void initializeMAX(void);
+void clear_MAX7219(void);
 
 #endif

@@ -37,7 +37,7 @@
 //+++++++++++++++++++++++ GLOBAL SYMBOLS ++++++++++++++++++++++++
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //Timecode Values Variables
-volatile unsigned char frames = 0, seconds = 0, minutes = 0, hours = 1;
+volatile unsigned char frames = 23, seconds = 59, minutes = 59, hours = 0;
 volatile unsigned char userbits[8] = {2,4,6,8,1,3,5,7};
 volatile unsigned char sections[10]; //10 8-bit sections to make up 80-bit LTC block
 volatile unsigned char parity_bit = 0; //Even Parity
@@ -116,8 +116,8 @@ int main(void)
         //SCK: PB5, MISO: PB4, MOSI: PB3, SS: PB2
         DDRB |= (1 << DDB3) | (1 << DDB5) | (1 << DDB2);  //Set MOSI & SCK Output; Also SS as output
         PORTB |= 0b00000100; //Set default SS Output to High
-        SPCR |= (1 << SPE) | (1 << MSTR); // ENABLE SPI, Master
-        SPSR |= (1 << SPI2X); // Set clock to 10MHZ (fck/2)
+        SPCR = (1 << SPE) | (1 << MSTR); // ENABLE SPI, Master
+        SPSR = (1 << SPI2X); // Set clock to 10MHZ (fck/2)
     
     //Program the MAX7219
         initializeMAX();
