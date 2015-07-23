@@ -37,7 +37,7 @@
 //+++++++++++++++++++++++ GLOBAL SYMBOLS ++++++++++++++++++++++++
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //Timecode Values Variables
-volatile unsigned char frames = 0, seconds = 0, minutes = 0, hours = 0;
+volatile unsigned char frames = 0, seconds = 0, minutes = 0, hours = 1;
 volatile unsigned char userbits[8] = {2,4,6,8,1,3,5,7};
 volatile unsigned char sections[10]; //10 8-bit sections to make up 80-bit LTC block
 volatile unsigned char parity_bit = 0; //Even Parity
@@ -138,7 +138,7 @@ int main(void)
 		sleep_mode();	//Go into Idle Sleep Mode until Interrupt occurs
         
         //LED STROBING DEPENDING ON CURRENT MODE
-        led_strobe();
+        //led_strobe();
 	}
 }
 
