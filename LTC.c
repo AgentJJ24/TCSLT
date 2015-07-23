@@ -361,12 +361,13 @@ void clear_MAX7219()
 
 void display_smpte()
 {
-    clear_MAX7219();
+
 
     frame_subcount++;
     if (frame_subcount == FRAME_MIDBITCOUNT)
     {
         frame_subcount = 0; //Reset Frame Subcount Counter
+        clear_MAX7219();
         
         //Frame Units
         MAX_address = 0b00000001; //Address
